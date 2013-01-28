@@ -15,6 +15,7 @@
  * the Free Software Foundation.
  */
 
+/* #define DEBUG */
 #include <linux/slab.h>
 #include <linux/input.h>
 #include <linux/input/mt.h>
@@ -112,6 +113,8 @@ static const struct alps_model_info alps_model_data[] = {
 	{ { 0x73, 0x02, 0x64 },	0x9b, ALPS_PROTO_V3, 0x8f, 0x8f, ALPS_DUALPOINT },
 	{ { 0x73, 0x02, 0x64 },	0x9d, ALPS_PROTO_V3, 0x8f, 0x8f, ALPS_DUALPOINT },
 	{ { 0x73, 0x02, 0x64 },	0x8a, ALPS_PROTO_V4, 0x8f, 0x8f, 0 },
+	/* Dell Latitude E6430 */
+	{ { 0x73, 0x03, 0x0a },	0x1d, ALPS_PROTO_V5, 0x8f, 0x8f, ALPS_DUALPOINT },
 };
 
 /*
@@ -711,6 +714,9 @@ static void alps_process_packet(struct psmouse *psmouse)
 		break;
 	case ALPS_PROTO_V4:
 		alps_process_packet_v4(psmouse);
+		break;
+	case ALPS_PROTO_V5:
+		alps_process_packet_v3(psmouse);
 		break;
 	}
 }
@@ -1519,6 +1525,115 @@ error:
 	return -1;
 }
 
+static int alps_hw_init_v5(struct psmouse *psmouse)
+{
+	struct ps2dev *ps2dev = &psmouse->ps2dev;
+	unsigned char param[4];
+
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_BAT);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_BAT);
+
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSTREAM);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_WRAP);
+	ps2_command(ps2dev, param, PSMOUSE_CMD_GETINFO);
+
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_WRAP);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	param[0] = 0x64;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	ps2_command(ps2dev, param, PSMOUSE_CMD_GETINFO);
+	param[0] = 0x64;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_DIS);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSTREAM);
+
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	ps2_command(ps2dev, param, PSMOUSE_CMD_GETINFO);
+
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE11);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE11);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE11);
+	param[0] = 0xc8;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	param[0] = 0x14;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSTREAM);
+
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_WRAP);
+	ps2_command(ps2dev, param, PSMOUSE_CMD_GETINFO);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_WRAP);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	param[0] = 0x64;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	param[0] = 0x64;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_WRAP);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	param[0] = 0x14;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	ps2_command(ps2dev, param, PSMOUSE_CMD_GETINFO);
+
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETPOLL);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_WRAP);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_WRAP);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	param[0] = 0xc8;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	ps2_command(ps2dev, param, PSMOUSE_CMD_GETINFO);
+
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_WRAP);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	param[0] = 0x00;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETPOLL);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETPOLL);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_WRAP);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	param[0] = 0x01;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRES);
+	param[0] = 0x64;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	ps2_command(ps2dev, param, PSMOUSE_CMD_GETINFO);
+
+	param[0] = 0x64;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSCALE21);
+	ps2_command(ps2dev, NULL, PSMOUSE_CMD_SETSTREAM);
+	param[0] = 0x64;
+	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
+	ps2_command(ps2dev, param, PSMOUSE_CMD_ENABLE);
+
+	return 0;
+}
+
 static int alps_hw_init(struct psmouse *psmouse)
 {
 	struct alps_data *priv = psmouse->private;
@@ -1535,6 +1650,9 @@ static int alps_hw_init(struct psmouse *psmouse)
 		break;
 	case ALPS_PROTO_V4:
 		ret = alps_hw_init_v4(psmouse);
+		break;
+	case ALPS_PROTO_V5:
+		ret = alps_hw_init_v5(psmouse);
 		break;
 	}
 
@@ -1619,6 +1737,7 @@ int alps_init(struct psmouse *psmouse)
 		break;
 	case ALPS_PROTO_V3:
 	case ALPS_PROTO_V4:
+	case ALPS_PROTO_V5:
 		set_bit(INPUT_PROP_SEMI_MT, dev1->propbit);
 		input_mt_init_slots(dev1, 2, 0);
 		input_set_abs_params(dev1, ABS_MT_POSITION_X, 0, ALPS_V3_X_MAX, 0, 0);
