@@ -4,9 +4,9 @@ ALPS Touchpad Protocol
 Introduction
 ------------
 
-Currently the ALPS touchpad driver supports four protocol versions in use by
-ALPS touchpads, called versions 1, 2, 3, and 4. Information about the various
-protocol versions is contained in the following sections.
+Currently the ALPS touchpad driver supports six protocol versions in use by
+ALPS touchpads, called versions 1, 2, 3, 4, 5 and 6. Information about
+the various protocol versions is contained in the following sections.
 
 Detection
 ---------
@@ -20,7 +20,7 @@ If the E6 report is successful, the touchpad model is identified using the "E7
 report" sequence: E8-E7-E7-E7-E9. The response is the model signature and is
 matched against known models in the alps_model_data_array.
 
-With protocol versions 3 and 4, the E7 report model signature is always
+With protocol versions 3/4/6, the E7 report model signature is always
 73-02-64. To differentiate between these versions, the response from the
 "Enter Command Mode" sequence must be inspected as described below.
 
@@ -32,6 +32,12 @@ one-byte device registers in a 16-bit address space. The command sequence
 EC-EC-EC-E9 places the device in command mode, and the device will respond
 with 88-07 followed by a third byte. This third byte can be used to determine
 whether the devices uses the version 3 or 4 protocol.
+
+For versions 5 and 6, command mode seems to work and registers can be
+read correctly.  However, we have not reverse-engineered the registers and
+the initialization steps appear to work.
+
+The GETINFO response at the end of enter_command_mode is different for V6.
 
 To exit command mode, PSMOUSE_CMD_SETSTREAM (EA) is sent to the touchpad.
 
@@ -187,3 +193,40 @@ There are several things worth noting here.
     well.
 
 So far no v4 devices with tracksticks have been encountered.
+
+ALPS Absolute Mode - Protocol Version 5
+---------------------------------------
+After the initialization sequence, V5 seems to conform to the V3 packet
+format.
+
+ALPS Absolute Mode - Protocol Version 6
+---------------------------------------
+As with V3, there are two modes: single-touch and multi-touch (mt).
+
+For both single-touch and multi-touch, the 6-byte packet format 
+is:
+
+ byte 0:    1    1    0    0    1    p   mt    0
+ byte 1:    0   x6   x5   x4   x3   x2   x1   x0
+ byte 2:    0   y6   y5   y4   y3   y2   y1   y0
+ byte 3:    0    M    R    L    1    m    r    l
+ byte 4:   y10  y9   y8   y7  x10   x9   x8   x7
+ byte 5:    0   z6   z5   z4   z3   z2   z1   z0
+
+where p=1 for palm detect and mt=1 for multi-touch.
+
+If the multi-touch bit is set then there is a second six-byte 
+packet, differentiated from a single-touch packet by setting 
+bit 0x20 in byte 0.  The format of the multi-touch packet is:
+
+ byte 0:    1    1    1    f2   1   f1   f0   x22
+ byte 1:   oX   y6   y5   y 4  y3   y2   y1    y0
+ byte 2:   oY   x2   x1   y12 y11  y10   y9    y8
+ byte 3:    0  x21  x20   x19   1  x18  x17   x16
+ byte 4:    0   x8   x7    x6  x5   x4   x3    x2
+ byte 5:    0  x15  x14   x13 x12  x11  x10    x9
+
+where 
+f[2-0]: number of fingers (1-5)
+oX and oY: indicators of multi-touch bounding box, not used in the driver
+

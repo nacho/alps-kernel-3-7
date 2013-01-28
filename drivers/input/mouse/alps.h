@@ -17,13 +17,14 @@
 #define ALPS_PROTO_V3	2
 #define ALPS_PROTO_V4	3
 #define ALPS_PROTO_V5	4
+#define ALPS_PROTO_V6	5
 
 struct alps_model_info {
-        unsigned char signature[3];
+	unsigned char signature[3];
 	unsigned char command_mode_resp; /* v3/v4 only */
 	unsigned char proto_version;
-        unsigned char byte0, mask0;
-        unsigned char flags;
+	unsigned char byte0, mask0;
+	unsigned char flags;
 };
 
 struct alps_nibble_commands {
