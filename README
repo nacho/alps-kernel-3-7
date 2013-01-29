@@ -1,0 +1,7 @@
+To build the module do something like this:
+
+	cd drivers/input/mouse
+	make -C /lib/modules/`uname -r`/build M=`pwd` psmouse.ko
+	rmmod psmouse
+	cp psmouse.ko /lib/modules/`uname -r`/kernel/drivers/input/mouse/
+	modprobe psmouse
